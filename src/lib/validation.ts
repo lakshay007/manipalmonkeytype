@@ -6,6 +6,12 @@ export interface ValidationResult {
   sanitized?: string;
 }
 
+export interface YearValidationResult {
+  isValid: boolean;
+  error?: string;
+  sanitized?: number;
+}
+
 /**
  * Validates and sanitizes MonkeyType username
  */
@@ -174,7 +180,7 @@ export function validateBranch(branch?: string): ValidationResult {
 /**
  * Validates year input
  */
-export function validateYear(year?: string | number): ValidationResult {
+export function validateYear(year?: string | number): YearValidationResult {
   if (!year) {
     return { isValid: true, sanitized: undefined };
   }

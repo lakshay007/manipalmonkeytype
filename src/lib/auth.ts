@@ -18,7 +18,8 @@ export const authOptions: NextAuthOptions = {
       // Persist the OAuth access_token and user info to the token right after signin
       if (account) {
         token.accessToken = account.access_token
-        token.id = profile?.id
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        token.id = (profile as any)?.id
       }
       return token
     },
