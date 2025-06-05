@@ -26,7 +26,7 @@ export default function Navbar() {
 
           {/* Navigation Links */}
           <div className="hidden md:flex items-center space-x-8">
-            <Link href="/leaderboard/60s" className="text-gray-300 hover:text-white transition-colors">
+            <Link href="/leaderboard/30s" className="text-gray-300 hover:text-white transition-colors">
               Leaderboards
             </Link>
             <Link href="/guides" className="text-gray-300 hover:text-white transition-colors">
@@ -71,7 +71,7 @@ export default function Navbar() {
                       <span>Dashboard</span>
                     </Link>
                     <Link
-                      href="/leaderboard/60s"
+                      href="/leaderboard/30s"
                       className="flex items-center space-x-2 px-4 py-2 text-gray-300 hover:bg-gray-800 hover:text-white md:hidden"
                       onClick={() => setShowDropdown(false)}
                     >
