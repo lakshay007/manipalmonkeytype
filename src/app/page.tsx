@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { BarChart3 } from "lucide-react";
 import { useSession, signIn } from "next-auth/react";
 
 export default function Home() {

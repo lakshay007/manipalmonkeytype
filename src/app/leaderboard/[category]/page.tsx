@@ -1,9 +1,11 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Trophy, Medal, Award, Clock, Target, Zap, User, ChevronLeft, ChevronRight } from "lucide-react";
+import Image from "next/image";
+import { ArrowLeft, Trophy, Medal, Award, User, ChevronLeft, ChevronRight } from "lucide-react";
 
 interface LeaderboardEntry {
   _id: string;
@@ -57,13 +59,7 @@ export default function LeaderboardPage() {
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
 
-  useEffect(() => {
-    if (category) {
-      fetchLeaderboard(currentPage);
-    }
-  }, [category, currentPage]);
-
-  const fetchLeaderboard = async (page: number) => {
+  const fetchLeaderboard = useCallback(async (page: number) => {
     try {
       setLoading(true);
       const response = await fetch(`/api/leaderboard/${category}?page=${page}&limit=25`);
@@ -79,7 +75,13 @@ export default function LeaderboardPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [category]);
+
+  useEffect(() => {
+    if (category) {
+      fetchLeaderboard(currentPage);
+    }
+  }, [category, currentPage, fetchLeaderboard]);
 
   const getRankIcon = (rank: number) => {
     if (rank === 1) return <Trophy className="h-5 w-5 text-yellow-400" />;
@@ -192,7 +194,7 @@ export default function LeaderboardPage() {
 
             {/* Leaderboard Entries */}
             <div className="bg-gray-900/20 rounded-b-lg border-x border-b border-gray-800/50">
-              {data?.leaderboard.map((entry, index) => (
+              {data?.leaderboard.map((entry) => (
                 <div
                   key={entry._id}
                   className={`grid grid-cols-12 gap-4 items-center px-4 py-3 border-b border-gray-800/30 last:border-b-0 transition-all hover:bg-gray-800/30 ${getRankBgColor(entry.rank)}`}
@@ -204,12 +206,13 @@ export default function LeaderboardPage() {
 
                   {/* Player Info */}
                   <div className="col-span-4 flex items-center space-x-3">
-                    <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-700 flex items-center justify-center flex-shrink-0">
+                    <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-700 flex items-center justify-center flex-shrink-0 relative">
                       {entry.user.discordAvatar ? (
-                        <img 
+                        <Image 
                           src={entry.user.discordAvatar} 
                           alt="Avatar" 
-                          className="w-full h-full object-cover"
+                          fill
+                          className="object-cover"
                         />
                       ) : (
                         <User className="h-4 w-4 text-gray-400" />

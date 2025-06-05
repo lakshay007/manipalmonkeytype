@@ -13,7 +13,7 @@ interface MongooseCache {
 }
 
 // In development, we want to use a global variable so connections persist across module reloads
-let cached: MongooseCache = (global as any).mongoose || { conn: null, promise: null };
+const cached: MongooseCache = (global as any).mongoose || { conn: null, promise: null };
 
 if (process.env.NODE_ENV === 'development') {
   (global as any).mongoose = cached;

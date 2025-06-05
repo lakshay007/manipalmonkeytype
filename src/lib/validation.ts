@@ -191,6 +191,7 @@ export function validateYear(year?: string | number): ValidationResult {
 /**
  * Prevents NoSQL injection by removing MongoDB operators
  */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 export function sanitizeMongoQuery(obj: any): any {
   if (obj === null || typeof obj !== 'object') {
     return obj;
