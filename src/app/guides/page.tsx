@@ -17,7 +17,7 @@ export default function Guides() {
             Getting Started Guide
           </h1>
           <p className="text-gray-400 text-lg">
-            Join the Manipal typing leaderboards in just 3 simple steps
+            Join the Type Manipal leaderboards in just 3 simple steps
           </p>
         </div>
 
