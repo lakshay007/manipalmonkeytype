@@ -39,75 +39,108 @@ export async function GET(
 
     await connectDB();
 
-    // Get total count for pagination (optimized query)
-    const totalUsers = await Score.countDocuments({
-      category: sanitizedCategory,
-      personalBest: true
-    });
-
-    // Optimized aggregation pipeline for better performance
-    const scores = await Score.aggregate([
+    // OPTIMIZED: Single aggregation query using $facet to get both count and data
+    // This reduces database round trips from 2 to 1
+    const results = await Score.aggregate([
       {
+        // Initial match - uses the optimized compound index
         $match: {
           category: sanitizedCategory,
           personalBest: true
         }
       },
       {
-        $lookup: {
-          from: 'users',
-          localField: 'userId',
-          foreignField: '_id',
-          as: 'user',
-          pipeline: [
+        // Use $facet to run count and data queries in parallel
+        $facet: {
+          // Get total count for pagination
+          totalCount: [
+            { $count: "count" }
+          ],
+          // Get paginated leaderboard data
+          leaderboardData: [
             {
-              $match: { isVerified: true }
+              $lookup: {
+                from: 'users',
+                localField: 'userId',
+                foreignField: '_id',
+                as: 'user',
+                pipeline: [
+                  {
+                    $match: { isVerified: true }
+                  },
+                  {
+                    $project: {
+                      discordUsername: 1,
+                      discordAvatar: 1,
+                      monkeyTypeUsername: 1,
+                      branch: 1,
+                      year: 1
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              $unwind: '$user'
+            },
+            {
+              // Sort using the compound index: category + personalBest + wpm
+              $sort: {
+                wpm: -1,
+                accuracy: -1,
+                consistency: -1
+              }
+            },
+            {
+              $skip: skip
+            },
+            {
+              $limit: limit
             },
             {
               $project: {
-                discordUsername: 1,
-                discordAvatar: 1,
-                monkeyTypeUsername: 1,
-                branch: 1,
-                year: 1
+                wpm: 1,
+                accuracy: 1,
+                consistency: 1,
+                rawWpm: 1,
+                lastUpdated: 1,
+                user: 1
               }
             }
           ]
         }
-      },
-      {
-        $unwind: '$user'
-      },
-      {
-        $sort: {
-          wpm: -1,
-          accuracy: -1,
-          consistency: -1
-        }
-      },
-      {
-        $skip: skip
-      },
-      {
-        $limit: limit
-      },
-      {
-        $project: {
-          wpm: 1,
-          accuracy: 1,
-          consistency: 1,
-          rawWpm: 1,
-          lastUpdated: 1,
-          user: 1
-        }
       }
     ]);
 
+    // Extract results from $facet
+    const totalUsers = results[0]?.totalCount[0]?.count || 0;
+    const scores = results[0]?.leaderboardData || [];
+
     // Add ranking (considering pagination)
-    const rankedScores = scores.map((score, index) => ({
+    const rankedScores = scores.map((score: {
+      _id: string;
+      wpm: number;
+      accuracy: number;
+      consistency: number;
+      rawWpm: number;
+      lastUpdated: string;
+      user: {
+        discordUsername: string;
+        discordAvatar?: string;
+        monkeyTypeUsername: string;
+        branch?: string;
+        year?: number;
+      };
+    }, index: number) => ({
       ...score,
       rank: skip + index + 1
     }));
+
+    // Add short-term caching (60 seconds) for better performance
+    // This gives fresh data while reducing database load
+    const headers: Record<string, string> = {
+      'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=120',
+    };
 
     return NextResponse.json({
       category: sanitizedCategory,
@@ -117,7 +150,7 @@ export async function GET(
       hasNextPage: page * limit < totalUsers,
       hasPreviousPage: page > 1,
       leaderboard: rankedScores
-    });
+    }, { headers });
 
   } catch (error) {
     console.error('Error fetching leaderboard:', error instanceof Error ? error.message : 'Unknown error');

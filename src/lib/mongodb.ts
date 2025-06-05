@@ -27,9 +27,20 @@ async function connectDB() {
   if (!cached.promise) {
     const opts = {
       bufferCommands: false,
+      // Connection pool settings for better performance
+      maxPoolSize: 200,        // Maximum number of connections in the pool
+      minPoolSize: 10,         // Minimum number of connections to maintain
+      maxIdleTimeMS: 30000,    // Close connections after 30 seconds of inactivity
+      serverSelectionTimeoutMS: 5000, // How long to wait for server selection
+      socketTimeoutMS: 45000,  // How long to wait for socket operations
+      family: 4,               // Use IPv4, skip trying IPv6
+      // Retry settings
+      retryWrites: true,
+      retryReads: true,
     };
 
     cached.promise = mongoose.connect(MONGODB_URI!, opts).then((mongoose) => {
+      console.log('MongoDB connected with optimized settings');
       return mongoose;
     });
   }
@@ -38,6 +49,7 @@ async function connectDB() {
     cached.conn = await cached.promise;
   } catch (e) {
     cached.promise = null;
+    console.error('MongoDB connection failed:', e);
     throw e;
   }
 

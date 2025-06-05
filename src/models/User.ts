@@ -59,4 +59,12 @@ const UserSchema: Schema = new Schema({
   },
 });
 
+// Indexes for better performance
+// Primary lookup index for leaderboard aggregation
+UserSchema.index({ _id: 1, isVerified: 1 });
+
+// Additional indexes for user queries
+// Note: discordId and monkeyTypeUsername already have unique indexes
+UserSchema.index({ isVerified: 1 }); // For filtering verified users
+
 export default mongoose.models.User || mongoose.model<IUser>('User', UserSchema); 

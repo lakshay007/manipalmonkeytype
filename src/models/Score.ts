@@ -76,4 +76,11 @@ ScoreSchema.index({ category: 1, wpm: -1 });
 ScoreSchema.index({ userId: 1, category: 1, personalBest: 1 });
 ScoreSchema.index({ discordId: 1, category: 1 });
 
+// CRITICAL: Optimized compound index for leaderboard aggregation pipeline
+// This supports: category + personalBest filter + wpm sorting in one index
+ScoreSchema.index({ category: 1, personalBest: 1, wpm: -1 });
+
+// Additional optimization: index for user lookups in aggregation
+ScoreSchema.index({ userId: 1, personalBest: 1 });
+
 export default mongoose.models.Score || mongoose.model<IScore>('Score', ScoreSchema); 
