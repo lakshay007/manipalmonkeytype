@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowLeft, Trophy, Medal, Award, User, ChevronLeft, ChevronRight, RefreshCw } from "lucide-react";
+import { ArrowLeft, Trophy, Medal, Award, User, ChevronLeft, ChevronRight } from "lucide-react";
 
 interface LeaderboardEntry {
   _id: string;
@@ -55,19 +55,13 @@ export default function LeaderboardPage() {
   
   const [data, setData] = useState<LeaderboardData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
 
-  const fetchLeaderboard = useCallback(async (page: number, refresh = false) => {
+  const fetchLeaderboard = useCallback(async (page: number) => {
     try {
       setLoading(true);
-      if (refresh) {
-        setRefreshing(true);
-      }
-      
-      const refreshParam = refresh ? '&refresh=true' : '';
-      const response = await fetch(`/api/leaderboard/${category}?page=${page}&limit=25${refreshParam}`);
+      const response = await fetch(`/api/leaderboard/${category}?page=${page}&limit=25`);
       
       if (!response.ok) {
         throw new Error('Failed to fetch leaderboard');
@@ -79,7 +73,6 @@ export default function LeaderboardPage() {
       setError(err instanceof Error ? err.message : 'Failed to load leaderboard');
     } finally {
       setLoading(false);
-      setRefreshing(false);
     }
   }, [category]);
 
@@ -88,10 +81,6 @@ export default function LeaderboardPage() {
       fetchLeaderboard(currentPage);
     }
   }, [category, currentPage, fetchLeaderboard]);
-
-  const handleRefresh = () => {
-    fetchLeaderboard(currentPage, true);
-  };
 
   const getRankIcon = (rank: number) => {
     if (rank === 1) return <Trophy className="h-5 w-5 text-yellow-400" />;
@@ -156,20 +145,9 @@ export default function LeaderboardPage() {
               </span>
               <span className="text-white"> Leaderboard</span>
             </h1>
-            <div className="flex items-center justify-center space-x-4">
-              <p className="text-gray-400">
-                {data?.totalUsers || 0} verified typists • Page {data?.currentPage} of {data?.totalPages}
-              </p>
-              <button
-                onClick={handleRefresh}
-                disabled={refreshing}
-                className="flex items-center space-x-1 px-3 py-1 bg-gray-800 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed text-gray-300 hover:text-white rounded-lg transition-all text-sm"
-                title="Refresh leaderboard from database"
-              >
-                <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
-                <span>{refreshing ? 'Refreshing...' : 'Refresh'}</span>
-              </button>
-            </div>
+            <p className="text-gray-400">
+              {data?.totalUsers || 0} verified typists • Page {data?.currentPage} of {data?.totalPages}
+            </p>
           </div>
         </div>
 
