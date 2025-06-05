@@ -299,7 +299,7 @@ async function scrapeMonkeyTypeScores(username: string) {
 
     console.log('Scraping result:', scrapingResult);
 
-    if (scrapingResult.success && scrapingResult.scores.length > 0) {
+    if (scrapingResult.success && scrapingResult.scores && scrapingResult.scores.length > 0) {
       // Remove duplicates and keep highest WPM for each category
       const uniqueScores: Record<string, any> = {};
       scrapingResult.scores.forEach(score => {
