@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '../../auth/[...nextauth]/route';
 import connectDB from '@/lib/mongodb';
 import User from '@/models/User';
+import { validateDiscordId } from '@/lib/validation';
 
 export async function GET(req: NextRequest) {
   try {
@@ -12,6 +13,15 @@ export async function GET(req: NextRequest) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
+      );
+    }
+
+    // Validate Discord ID from session
+    const discordIdValidation = validateDiscordId(session.user.id);
+    if (!discordIdValidation.isValid) {
+      return NextResponse.json(
+        { error: 'Invalid session data' },
+        { status: 400 }
       );
     }
 
@@ -36,7 +46,7 @@ export async function GET(req: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Error checking profile status:', error);
+    console.error('Error checking profile status:', error instanceof Error ? error.message : 'Unknown error');
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

@@ -5,6 +5,7 @@ import connectDB from '@/lib/mongodb';
 import User from '@/models/User';
 import Score from '@/models/Score';
 import puppeteer from 'puppeteer';
+import { validateDiscordId } from '@/lib/validation';
 
 export async function POST(req: NextRequest) {
   try {
@@ -14,6 +15,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
+      );
+    }
+
+    // Validate Discord ID from session
+    const discordIdValidation = validateDiscordId(session.user.id);
+    if (!discordIdValidation.isValid) {
+      return NextResponse.json(
+        { error: 'Invalid session data' },
+        { status: 400 }
       );
     }
 
@@ -44,21 +54,35 @@ export async function POST(req: NextRequest) {
       // Clear existing scores for this user
       await Score.deleteMany({ userId: user._id });
 
-      // Insert new scores
-      const scoreDocuments = scrapedData.scores.map(score => ({
-        userId: user._id,
-        discordId: session.user.id,
-        monkeyTypeUsername: user.monkeyTypeUsername,
-        category: score.category,
-        wpm: score.wpm,
-        accuracy: score.accuracy,
-        consistency: score.consistency,
-        rawWpm: score.rawWpm,
-        personalBest: true,
-        lastUpdated: new Date(),
-      }));
+      // Validate and sanitize scores before storing
+      const scoreDocuments = scrapedData.scores
+        .filter(score => {
+          // Validate score data
+          return (
+            score.category && 
+            typeof score.wpm === 'number' && 
+            typeof score.accuracy === 'number' &&
+            score.wpm >= 0 && score.wpm <= 500 && // Reasonable WPM limits
+            score.accuracy >= 0 && score.accuracy <= 100 &&
+            ['15s', '30s', '60s', '120s', 'words'].includes(score.category)
+          );
+        })
+        .map(score => ({
+          userId: user._id,
+          discordId: session.user.id,
+          monkeyTypeUsername: user.monkeyTypeUsername,
+          category: score.category,
+          wpm: Math.round(score.wpm), // Ensure integer
+          accuracy: Math.round(score.accuracy), // Ensure integer
+          consistency: Math.round(score.consistency || 0), // Ensure integer
+          rawWpm: Math.round(score.rawWpm || score.wpm), // Ensure integer
+          personalBest: true,
+          lastUpdated: new Date(),
+        }));
 
-      await Score.insertMany(scoreDocuments);
+      if (scoreDocuments.length > 0) {
+        await Score.insertMany(scoreDocuments);
+      }
     }
 
     return NextResponse.json({
@@ -68,7 +92,7 @@ export async function POST(req: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Error refreshing scores:', error);
+    console.error('Error refreshing scores:', error instanceof Error ? error.message : 'Unknown error');
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -91,8 +115,12 @@ async function scrapeMonkeyTypeScores(username: string) {
         '--no-sandbox', 
         '--disable-setuid-sandbox',
         '--disable-dev-shm-usage',
-        '--disable-web-security',
-        '--disable-features=VizDisplayCompositor'
+        '--disable-features=VizDisplayCompositor',
+        '--disable-extensions',
+        '--disable-background-timer-throttling',
+        '--disable-renderer-backgrounding',
+        '--disable-backgrounding-occluded-windows',
+        '--disable-ipc-flooding-protection'
       ]
     });
     
@@ -102,13 +130,20 @@ async function scrapeMonkeyTypeScores(username: string) {
     await page.setUserAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
     
     // Navigate to MonkeyType profile
-    const profileUrl = `https://monkeytype.com/profile/${username}`;
+    const profileUrl = `https://monkeytype.com/profile/${encodeURIComponent(username)}`;
+    
+    // Validate that we're only visiting MonkeyType
+    const urlObj = new URL(profileUrl);
+    if (urlObj.hostname !== 'monkeytype.com') {
+      console.error('Invalid hostname detected:', urlObj.hostname);
+      return { success: false, error: 'Invalid MonkeyType URL' };
+    }
     
     let response;
     try {
       response = await page.goto(profileUrl, { 
         waitUntil: 'domcontentloaded',
-        timeout: 30000
+        timeout: 60000
       });
     } catch (timeoutError) {
       return { success: false, error: 'MonkeyType profile took too long to load' };

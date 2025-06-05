@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import Score from '@/models/Score';
 import User from '@/models/User';
+import { validateCategory, validatePagination } from '@/lib/validation';
 
 export async function GET(
   req: NextRequest,
@@ -11,25 +12,37 @@ export async function GET(
     const { category } = await params;
     const { searchParams } = new URL(req.url);
     
-    // Get pagination parameters
-    const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '50'); // Default to 50 for better performance
-    const skip = (page - 1) * limit;
-    
     // Validate category
-    const validCategories = ['15s', '30s', '60s', '120s', 'words'];
-    if (!validCategories.includes(category)) {
+    const categoryValidation = validateCategory(category);
+    if (!categoryValidation.isValid) {
       return NextResponse.json(
-        { error: 'Invalid category' },
+        { error: categoryValidation.error },
         { status: 400 }
       );
     }
+    const sanitizedCategory = categoryValidation.sanitized!;
+    
+    // Validate pagination parameters
+    const paginationValidation = validatePagination(
+      searchParams.get('page') || undefined,
+      searchParams.get('limit') || undefined
+    );
+    
+    if (!paginationValidation.isValid) {
+      return NextResponse.json(
+        { error: paginationValidation.error },
+        { status: 400 }
+      );
+    }
+    
+    const { page, limit } = paginationValidation;
+    const skip = (page - 1) * limit;
 
     await connectDB();
 
     // Get total count for pagination (optimized query)
     const totalUsers = await Score.countDocuments({
-      category: category,
+      category: sanitizedCategory,
       personalBest: true
     });
 
@@ -37,7 +50,7 @@ export async function GET(
     const scores = await Score.aggregate([
       {
         $match: {
-          category: category,
+          category: sanitizedCategory,
           personalBest: true
         }
       },
@@ -103,7 +116,7 @@ export async function GET(
     };
 
     return NextResponse.json({
-      category,
+      category: sanitizedCategory,
       totalUsers,
       currentPage: page,
       totalPages: Math.ceil(totalUsers / limit),
@@ -113,7 +126,7 @@ export async function GET(
     }, { headers });
 
   } catch (error) {
-    console.error('Error fetching leaderboard:', error);
+    console.error('Error fetching leaderboard:', error instanceof Error ? error.message : 'Unknown error');
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

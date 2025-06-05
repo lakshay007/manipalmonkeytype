@@ -5,6 +5,7 @@ import connectDB from '@/lib/mongodb';
 import User from '@/models/User';
 import Score from '@/models/Score';
 import puppeteer from 'puppeteer';
+import { validateMonkeyTypeUsername, validateDiscordId, sanitizeString } from '@/lib/validation';
 
 export async function POST(req: NextRequest) {
   try {
@@ -17,24 +18,38 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { monkeyTypeUsername } = await req.json();
-
-    if (!monkeyTypeUsername) {
+    // Validate Discord ID from session
+    const discordIdValidation = validateDiscordId(session.user.id);
+    if (!discordIdValidation.isValid) {
       return NextResponse.json(
-        { error: 'MonkeyType username is required' },
+        { error: 'Invalid session data' },
         { status: 400 }
       );
     }
+
+    const body = await req.json();
+    const { monkeyTypeUsername } = body;
+
+    // Validate MonkeyType username
+    const usernameValidation = validateMonkeyTypeUsername(monkeyTypeUsername);
+    if (!usernameValidation.isValid) {
+      return NextResponse.json(
+        { error: usernameValidation.error },
+        { status: 400 }
+      );
+    }
+
+    const sanitizedUsername = usernameValidation.sanitized!;
 
     await connectDB();
 
     // Check if current user already has a different verified MonkeyType account
     const currentUser = await User.findOne({ discordId: session.user.id });
     if (currentUser && currentUser.monkeyTypeUsername && currentUser.isVerified && 
-        currentUser.monkeyTypeUsername !== monkeyTypeUsername) {
+        currentUser.monkeyTypeUsername !== sanitizedUsername) {
       return NextResponse.json(
         { 
-          error: `You already have a verified MonkeyType account linked: ${currentUser.monkeyTypeUsername}. Contact support if you need to change it.`,
+          error: `You already have a verified MonkeyType account linked: ${sanitizeString(currentUser.monkeyTypeUsername)}. Contact support if you need to change it.`,
           code: 'ALREADY_VERIFIED_DIFFERENT_ACCOUNT'
         },
         { status: 409 }
@@ -43,7 +58,7 @@ export async function POST(req: NextRequest) {
 
     // Check if MonkeyType username is already taken by another verified user
     const existingUser = await User.findOne({ 
-      monkeyTypeUsername,
+      monkeyTypeUsername: sanitizedUsername,
       discordId: { $ne: session.user.id },
       isVerified: true
     });
@@ -60,7 +75,7 @@ export async function POST(req: NextRequest) {
 
     // Additional check: Look for any user (even unverified) with this username
     const anyExistingUser = await User.findOne({ 
-      monkeyTypeUsername,
+      monkeyTypeUsername: sanitizedUsername,
       discordId: { $ne: session.user.id }
     });
 
@@ -75,7 +90,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Scrape MonkeyType profile
-    const profileData = await scrapeMonkeyTypeProfile(monkeyTypeUsername);
+    const profileData = await scrapeMonkeyTypeProfile(sanitizedUsername);
     
     if (!profileData.exists) {
       return NextResponse.json(
@@ -91,14 +106,18 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Sanitize session data before storing
+    const sanitizedDiscordUsername = sanitizeString(session.user.name || '');
+    const sanitizedDiscordAvatar = session.user.image || '';
+
     // Update or create user record
     const user = await User.findOneAndUpdate(
       { discordId: session.user.id },
       {
         discordId: session.user.id,
-        discordUsername: session.user.name || '',
-        discordAvatar: session.user.image || '',
-        monkeyTypeUsername,
+        discordUsername: sanitizedDiscordUsername,
+        discordAvatar: sanitizedDiscordAvatar,
+        monkeyTypeUsername: sanitizedUsername,
         isVerified: true,
         verificationStatus: 'verified',
         lastUpdated: new Date(),
@@ -111,21 +130,35 @@ export async function POST(req: NextRequest) {
       // Clear existing scores for this user
       await Score.deleteMany({ userId: user._id });
 
-      // Insert new scores
-      const scoreDocuments = profileData.scores.map(score => ({
-        userId: user._id,
-        discordId: session.user.id,
-        monkeyTypeUsername,
-        category: score.category,
-        wpm: score.wpm,
-        accuracy: score.accuracy,
-        consistency: score.consistency,
-        rawWpm: score.rawWpm,
-        personalBest: true,
-        lastUpdated: new Date(),
-      }));
+      // Validate and sanitize scores before storing
+      const scoreDocuments = profileData.scores
+        .filter(score => {
+          // Validate score data
+          return (
+            score.category && 
+            typeof score.wpm === 'number' && 
+            typeof score.accuracy === 'number' &&
+            score.wpm >= 0 && score.wpm <= 500 && // Reasonable WPM limits
+            score.accuracy >= 0 && score.accuracy <= 100 &&
+            ['15s', '30s', '60s', '120s', 'words'].includes(score.category)
+          );
+        })
+        .map(score => ({
+          userId: user._id,
+          discordId: session.user.id,
+          monkeyTypeUsername: sanitizedUsername,
+          category: score.category,
+          wpm: Math.round(score.wpm), // Ensure integer
+          accuracy: Math.round(score.accuracy), // Ensure integer
+          consistency: Math.round(score.consistency || 0), // Ensure integer
+          rawWpm: Math.round(score.rawWpm || score.wpm), // Ensure integer
+          personalBest: true,
+          lastUpdated: new Date(),
+        }));
 
-      await Score.insertMany(scoreDocuments);
+      if (scoreDocuments.length > 0) {
+        await Score.insertMany(scoreDocuments);
+      }
     }
 
     return NextResponse.json({
@@ -139,7 +172,7 @@ export async function POST(req: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Error linking MonkeyType account:', error);
+    console.error('Error linking MonkeyType account:', error instanceof Error ? error.message : 'Unknown error');
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -156,14 +189,30 @@ async function scrapeMonkeyTypeProfile(username: string) {
   let browser;
   
   try {
+    // Additional validation for MonkeyType username to prevent URL manipulation
+    if (!username || typeof username !== 'string' || username.length > 50) {
+      return { exists: false, hasManipialInBio: false, scores: [] };
+    }
+
+    // Ensure username only contains safe characters
+    const safeUsernameRegex = /^[a-zA-Z0-9._-]+$/;
+    if (!safeUsernameRegex.test(username)) {
+      return { exists: false, hasManipialInBio: false, scores: [] };
+    }
+
     browser = await puppeteer.launch({
       headless: true,
       args: [
         '--no-sandbox', 
         '--disable-setuid-sandbox',
         '--disable-dev-shm-usage',
-        '--disable-web-security',
-        '--disable-features=VizDisplayCompositor'
+        // Remove: '--disable-web-security', // Security improvement
+        '--disable-features=VizDisplayCompositor',
+        '--disable-extensions',
+        '--disable-background-timer-throttling',
+        '--disable-renderer-backgrounding',
+        '--disable-backgrounding-occluded-windows',
+        '--disable-ipc-flooding-protection'
       ]
     });
     
@@ -172,8 +221,15 @@ async function scrapeMonkeyTypeProfile(username: string) {
     // Set a realistic user agent
     await page.setUserAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
     
-    // Navigate to MonkeyType profile with increased timeout
-    const profileUrl = `https://monkeytype.com/profile/${username}`;
+    // Construct and validate the URL
+    const profileUrl = `https://monkeytype.com/profile/${encodeURIComponent(username)}`;
+    
+    // Validate that we're only visiting MonkeyType
+    const urlObj = new URL(profileUrl);
+    if (urlObj.hostname !== 'monkeytype.com') {
+      console.error('Invalid hostname detected:', urlObj.hostname);
+      return { exists: false, hasManipialInBio: false, scores: [] };
+    }
     
     let response;
     try {
@@ -182,7 +238,7 @@ async function scrapeMonkeyTypeProfile(username: string) {
         timeout: 60000 // 60 seconds
       });
     } catch (timeoutError) {
-      console.log('Navigation timeout, trying alternative approach');
+      console.log('Navigation timeout for username:', username);
       return { exists: false, hasManipialInBio: false, scores: [] };
     }
     
@@ -207,7 +263,7 @@ async function scrapeMonkeyTypeProfile(username: string) {
         );
       });
     } catch (e) {
-      console.log('Error checking profile existence:', e);
+      console.log('Error checking profile existence for username:', username);
     }
     
     if (!profileExists) {
@@ -232,7 +288,7 @@ async function scrapeMonkeyTypeProfile(username: string) {
         return document.body.textContent?.toLowerCase().includes('manipal') || false;
       });
     } catch (e) {
-      console.log('Could not check bio for Manipal:', e);
+      console.log('Could not check bio for Manipal for username:', username);
     }
 
     // Scrape actual scores from the page

@@ -1,3 +1,4 @@
+/* eslint-disable react/no-unescaped-entities */
 "use client";
 
 import { useSession } from "next-auth/react";
@@ -30,6 +31,30 @@ export default function ProfileSetup() {
     e.preventDefault();
     if (!monkeyTypeUsername.trim()) return;
 
+    // Client-side validation
+    const trimmedUsername = monkeyTypeUsername.trim();
+    
+    // Basic validation
+    if (trimmedUsername.length < 2) {
+      setVerificationStep('error');
+      setErrorMessage('Username must be at least 2 characters long');
+      return;
+    }
+    
+    if (trimmedUsername.length > 50) {
+      setVerificationStep('error');
+      setErrorMessage('Username must be 50 characters or less');
+      return;
+    }
+    
+    // Check for valid characters
+    const usernameRegex = /^[a-zA-Z0-9._-]+$/;
+    if (!usernameRegex.test(trimmedUsername)) {
+      setVerificationStep('error');
+      setErrorMessage('Username can only contain letters, numbers, periods, hyphens, and underscores');
+      return;
+    }
+
     setIsLoading(true);
     setVerificationStep('verifying');
     setErrorMessage("");
@@ -41,7 +66,7 @@ export default function ProfileSetup() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          monkeyTypeUsername: monkeyTypeUsername.trim(),
+          monkeyTypeUsername: trimmedUsername,
         }),
       });
 
@@ -54,7 +79,7 @@ export default function ProfileSetup() {
         setVerificationStep('error');
         setErrorMessage(data.error || 'Failed to link MonkeyType account');
       }
-    } catch (error) {
+    } catch {
       setVerificationStep('error');
       setErrorMessage('Network error. Please try again.');
     } finally {
@@ -95,7 +120,7 @@ export default function ProfileSetup() {
                 </li>
                 <li className="flex items-start space-x-2">
                   <span className="text-blue-400 font-bold">2.</span>
-                  <span>Add <code className="bg-gray-800 px-1 rounded text-yellow-400">"Manipal"</code> to your bio</span>
+                  <span>Add <code className="bg-gray-800 px-1 rounded text-yellow-400">Manipal</code> to your bio</span>
                 </li>
                 <li className="flex items-start space-x-2">
                   <span className="text-blue-400 font-bold">3.</span>
@@ -140,7 +165,7 @@ export default function ProfileSetup() {
             </p>
             <div className="space-y-2 text-sm text-gray-300">
               <div>⏳ Checking profile exists and is public</div>
-              <div>⏳ Verifying "Manipal" in bio</div>
+              <div>⏳ Verifying Manipal in bio</div>
               <div>⏳ Importing your personal best scores</div>
               <div className="text-xs text-gray-400 mt-2">This may take 10-15 seconds</div>
             </div>
