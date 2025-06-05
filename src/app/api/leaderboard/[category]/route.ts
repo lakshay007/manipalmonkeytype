@@ -136,12 +136,6 @@ export async function GET(
       rank: skip + index + 1
     }));
 
-    // Add short-term caching (60 seconds) for better performance
-    // This gives fresh data while reducing database load
-    const headers: Record<string, string> = {
-      'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=120',
-    };
-
     return NextResponse.json({
       category: sanitizedCategory,
       totalUsers,
@@ -150,7 +144,7 @@ export async function GET(
       hasNextPage: page * limit < totalUsers,
       hasPreviousPage: page > 1,
       leaderboard: rankedScores
-    }, { headers });
+    });
 
   } catch (error) {
     console.error('Error fetching leaderboard:', error instanceof Error ? error.message : 'Unknown error');
