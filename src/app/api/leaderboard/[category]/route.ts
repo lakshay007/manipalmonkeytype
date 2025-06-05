@@ -11,6 +11,9 @@ export async function GET(
     const { category } = await params;
     const { searchParams } = new URL(req.url);
     
+    // Check if this is a refresh request
+    const isRefresh = searchParams.get('refresh') === 'true';
+    
     // Validate category
     const categoryValidation = validateCategory(category);
     if (!categoryValidation.isValid) {
@@ -109,8 +112,12 @@ export async function GET(
       rank: skip + index + 1
     }));
 
-    // Cache headers for better performance
-    const headers = {
+    // Cache headers - bypass cache if refresh is requested
+    const headers: Record<string, string> = isRefresh ? {
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0'
+    } : {
       'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600', // Cache for 5 minutes
     };
 

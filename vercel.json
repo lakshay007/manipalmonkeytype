@@ -1,0 +1,10 @@
+{
+  "functions": {
+    "src/app/api/profile/link-monkeytype/route.ts": {
+      "maxDuration": 30
+    },
+    "src/app/api/profile/refresh-scores/route.ts": {
+      "maxDuration": 30
+    }
+  }
+} 
