@@ -288,7 +288,7 @@ async function scrapeMonkeyTypeScores(username: string) {
       } catch (error) {
         return {
           success: false,
-          error: error.toString(),
+          error: error instanceof Error ? error.message : String(error),
           debugInfo: {
             pageTitle: document.title,
             profileFound: !!document.querySelector('.profile')
