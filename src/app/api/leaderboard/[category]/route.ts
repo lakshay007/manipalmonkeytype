@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import Score from '@/models/Score';
-import User from '@/models/User';
 import { validateCategory, validatePagination } from '@/lib/validation';
 
 export async function GET(

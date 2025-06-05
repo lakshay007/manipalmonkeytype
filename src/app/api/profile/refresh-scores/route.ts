@@ -7,7 +7,7 @@ import Score from '@/models/Score';
 import puppeteer from 'puppeteer';
 import { validateDiscordId } from '@/lib/validation';
 
-export async function POST(_req: NextRequest) {
+export async function POST() {
   try {
     const session = await getServerSession(authOptions);
     
