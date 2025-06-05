@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@sparticuz/chromium": "^133.0.0",
     "@types/puppeteer": "^5.4.7",
     "lucide-react": "^0.513.0",
     "mongodb": "^6.17.0",
@@ -16,6 +17,7 @@
     "next": "15.3.3",
     "next-auth": "^4.24.11",
     "puppeteer": "^24.10.0",
+    "puppeteer-core": "^24.10.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },

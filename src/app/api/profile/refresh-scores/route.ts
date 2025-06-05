@@ -4,7 +4,7 @@ import { authOptions } from '@/lib/auth';
 import connectDB from '@/lib/mongodb';
 import User from '@/models/User';
 import Score from '@/models/Score';
-import puppeteer from 'puppeteer';
+import { launchBrowser } from '@/lib/browser';
 import { validateDiscordId } from '@/lib/validation';
 
 export async function POST() {
@@ -109,20 +109,7 @@ async function scrapeMonkeyTypeScores(username: string) {
   let browser;
   
   try {
-    browser = await puppeteer.launch({
-      headless: true,
-      args: [
-        '--no-sandbox', 
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
-        '--disable-features=VizDisplayCompositor',
-        '--disable-extensions',
-        '--disable-background-timer-throttling',
-        '--disable-renderer-backgrounding',
-        '--disable-backgrounding-occluded-windows',
-        '--disable-ipc-flooding-protection'
-      ]
-    });
+    browser = await launchBrowser();
     
     const page = await browser.newPage();
     

@@ -4,7 +4,7 @@ import { authOptions } from '@/lib/auth';
 import connectDB from '@/lib/mongodb';
 import User from '@/models/User';
 import Score from '@/models/Score';
-import puppeteer from 'puppeteer';
+import { launchBrowser } from '@/lib/browser';
 import { validateMonkeyTypeUsername, validateDiscordId, sanitizeString } from '@/lib/validation';
 
 export async function POST(req: NextRequest) {
@@ -200,21 +200,7 @@ async function scrapeMonkeyTypeProfile(username: string) {
       return { exists: false, hasManipialInBio: false, scores: [] };
     }
 
-    browser = await puppeteer.launch({
-      headless: true,
-      args: [
-        '--no-sandbox', 
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
-        // Remove: '--disable-web-security', // Security improvement
-        '--disable-features=VizDisplayCompositor',
-        '--disable-extensions',
-        '--disable-background-timer-throttling',
-        '--disable-renderer-backgrounding',
-        '--disable-backgrounding-occluded-windows',
-        '--disable-ipc-flooding-protection'
-      ]
-    });
+    browser = await launchBrowser();
     
     const page = await browser.newPage();
     
