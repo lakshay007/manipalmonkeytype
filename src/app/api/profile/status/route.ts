@@ -5,7 +5,7 @@ import connectDB from '@/lib/mongodb';
 import User from '@/models/User';
 import { validateDiscordId } from '@/lib/validation';
 
-export async function GET(req: NextRequest) {
+export async function GET(_req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     

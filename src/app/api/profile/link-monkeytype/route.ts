@@ -237,7 +237,7 @@ async function scrapeMonkeyTypeProfile(username: string) {
         waitUntil: 'domcontentloaded',
         timeout: 60000 // 60 seconds
       });
-    } catch (timeoutError) {
+    } catch {
       console.log('Navigation timeout for username:', username);
       return { exists: false, hasManipialInBio: false, scores: [] };
     }
@@ -262,7 +262,7 @@ async function scrapeMonkeyTypeProfile(username: string) {
           document.body.textContent?.includes('Personal Bests')
         );
       });
-    } catch (e) {
+    } catch {
       console.log('Error checking profile existence for username:', username);
     }
     
@@ -287,11 +287,12 @@ async function scrapeMonkeyTypeProfile(username: string) {
         // Also check if "manipal" appears anywhere on the page as fallback
         return document.body.textContent?.toLowerCase().includes('manipal') || false;
       });
-    } catch (e) {
+    } catch {
       console.log('Could not check bio for Manipal for username:', username);
     }
 
     // Scrape actual scores from the page
+    /* eslint-disable @typescript-eslint/no-explicit-any */
     const scrapingResult = await page.evaluate(() => {
       const extractedScores: any[] = [];
       
@@ -446,6 +447,7 @@ async function scrapeMonkeyTypeProfile(username: string) {
 
       processedScores = Object.values(uniqueScores);
     }
+    /* eslint-enable @typescript-eslint/no-explicit-any */
 
     return {
       exists: true,
@@ -461,21 +463,9 @@ async function scrapeMonkeyTypeProfile(username: string) {
     if (browser) {
       try {
         await browser.close();
-      } catch (e) {
-        console.log('Error closing browser:', e);
+      } catch {
+        console.log('Error closing browser');
       }
     }
   }
-}
-
-function parseCategoryFromText(text: string): string | null {
-  const lowerText = text.toLowerCase();
-  
-  if (lowerText.includes('15') && lowerText.includes('second')) return '15s';
-  if (lowerText.includes('30') && lowerText.includes('second')) return '30s';
-  if (lowerText.includes('60') && lowerText.includes('second')) return '60s';
-  if (lowerText.includes('120') && lowerText.includes('second')) return '120s';
-  if (lowerText.includes('word')) return 'words';
-  
-  return null;
 } 

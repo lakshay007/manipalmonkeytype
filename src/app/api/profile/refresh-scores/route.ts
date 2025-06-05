@@ -7,7 +7,7 @@ import Score from '@/models/Score';
 import puppeteer from 'puppeteer';
 import { validateDiscordId } from '@/lib/validation';
 
-export async function POST(req: NextRequest) {
+export async function POST(_req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     
@@ -145,7 +145,7 @@ async function scrapeMonkeyTypeScores(username: string) {
         waitUntil: 'domcontentloaded',
         timeout: 60000
       });
-    } catch (timeoutError) {
+    } catch {
       return { success: false, error: 'MonkeyType profile took too long to load' };
     }
     
@@ -157,6 +157,7 @@ async function scrapeMonkeyTypeScores(username: string) {
     await delay(5000);
 
     // Try to extract actual scores from the page
+    /* eslint-disable @typescript-eslint/no-explicit-any */
     const scrapingResult = await page.evaluate(() => {
       const extractedScores: any[] = [];
       
@@ -312,6 +313,7 @@ async function scrapeMonkeyTypeScores(username: string) {
         scores: Object.values(uniqueScores)
       };
     }
+    /* eslint-enable @typescript-eslint/no-explicit-any */
 
     // If we couldn't scrape any scores, return an error instead of generating fake ones
     return {
@@ -327,8 +329,8 @@ async function scrapeMonkeyTypeScores(username: string) {
     if (browser) {
       try {
         await browser.close();
-      } catch (e) {
-        console.log('Error closing browser:', e);
+      } catch {
+        console.log('Error closing browser');
       }
     }
   }

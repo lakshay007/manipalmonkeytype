@@ -4,7 +4,8 @@ import { useSession } from "next-auth/react";
 import { redirect } from "next/navigation";
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { User, Trophy, Clock, Settings, CheckCircle, RefreshCw, AlertCircle } from "lucide-react";
+import Image from "next/image";
+import { Trophy, Clock, Settings, CheckCircle, RefreshCw, AlertCircle } from "lucide-react";
 
 interface ProfileStatus {
   isLinked: boolean;
@@ -48,8 +49,8 @@ export default function Dashboard() {
         const data = await response.json();
         setProfileStatus(data);
       }
-    } catch (error) {
-      console.error('Error fetching profile status:', error);
+    } catch {
+      console.error('Error fetching profile status');
     } finally {
       setIsLoading(false);
     }
@@ -81,7 +82,7 @@ export default function Dashboard() {
           message: data.error || 'Failed to refresh scores'
         });
       }
-    } catch (error) {
+    } catch {
       setRefreshStatus({
         type: 'error',
         message: 'Network error. Please try again.'
@@ -117,11 +118,12 @@ export default function Dashboard() {
         {/* Header */}
         <div className="text-center mb-12">
           <div className="flex justify-center mb-4">
-            <div className="w-20 h-20 rounded-full overflow-hidden">
-              <img 
+            <div className="w-20 h-20 rounded-full overflow-hidden relative">
+              <Image 
                 src={session.user?.image || "/default-avatar.png"} 
                 alt="Discord Avatar" 
-                className="w-full h-full object-cover"
+                fill
+                className="object-cover"
               />
             </div>
           </div>
