@@ -35,6 +35,10 @@ export async function GET() {
         isLinked: false,
         monkeyTypeUsername: null,
         isVerified: false,
+        eduEmail: null,
+        eduEmailVerified: false,
+        hasVerificationCode: false,
+        verificationCodeExpiresAt: null,
       });
     }
 
@@ -43,6 +47,10 @@ export async function GET() {
       monkeyTypeUsername: user.monkeyTypeUsername,
       isVerified: user.isVerified,
       verificationStatus: user.verificationStatus,
+      eduEmail: user.eduEmail || null,
+      eduEmailVerified: user.eduEmailVerified || false,
+      hasVerificationCode: !!(user.verificationCode && user.verificationCodeExpiresAt && new Date() < user.verificationCodeExpiresAt),
+      verificationCodeExpiresAt: user.verificationCodeExpiresAt || null,
     });
 
   } catch (error) {

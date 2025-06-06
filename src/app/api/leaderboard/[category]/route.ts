@@ -74,7 +74,8 @@ export async function GET(
                       discordAvatar: 1,
                       monkeyTypeUsername: 1,
                       branch: 1,
-                      year: 1
+                      year: 1,
+                      eduEmailVerified: 1
                     }
                   }
                 ]

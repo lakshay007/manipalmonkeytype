@@ -6,12 +6,17 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Trophy, Clock, Settings, CheckCircle, RefreshCw, AlertCircle } from "lucide-react";
+import EmailVerification from "@/components/EmailVerification";
 
 interface ProfileStatus {
   isLinked: boolean;
   monkeyTypeUsername: string | null;
   isVerified: boolean;
   verificationStatus?: string;
+  eduEmail?: string | null;
+  eduEmailVerified: boolean;
+  hasVerificationCode: boolean;
+  verificationCodeExpiresAt?: string | null;
 }
 
 export default function Dashboard() {
@@ -226,6 +231,19 @@ export default function Dashboard() {
             </Link>
           </div>
         </div>
+
+        {/* Email Verification Section */}
+        {profileStatus && (
+          <div className="mb-12">
+            <EmailVerification
+              eduEmail={profileStatus.eduEmail}
+              eduEmailVerified={profileStatus.eduEmailVerified}
+              hasVerificationCode={profileStatus.hasVerificationCode}
+              verificationCodeExpiresAt={profileStatus.verificationCodeExpiresAt}
+              onVerificationComplete={fetchProfileStatus}
+            />
+          </div>
+        )}
 
         {/* Leaderboard Categories */}
         <div className="bg-gray-900 rounded-xl p-6 border border-gray-800">

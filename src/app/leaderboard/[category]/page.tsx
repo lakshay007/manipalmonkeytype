@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowLeft, Trophy, Medal, Award, User, ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowLeft, Trophy, Medal, Award, User, ChevronLeft, ChevronRight, CheckCircle } from "lucide-react";
 
 interface LeaderboardEntry {
   _id: string;
@@ -20,6 +20,7 @@ interface LeaderboardEntry {
     monkeyTypeUsername: string;
     branch?: string;
     year?: number;
+    eduEmailVerified?: boolean;
   };
 }
 
@@ -219,8 +220,16 @@ export default function LeaderboardPage() {
                     </div>
                     
                     <div className="min-w-0 flex-1">
-                      <div className="font-medium text-white text-sm truncate">
-                        {entry.user.discordUsername}
+                      <div className="font-medium text-white text-sm truncate flex items-center space-x-2">
+                        <span>{entry.user.discordUsername}</span>
+                        {entry.user.eduEmailVerified && (
+                          <div className="flex items-center space-x-1">
+                            <CheckCircle className="h-4 w-4 text-green-400 flex-shrink-0" />
+                            <span className="text-green-400 text-[7px] font-medium bg-green-400/10 px-1 py-0.5 rounded border border-green-400/20">
+                              VERIFIED
+                            </span>
+                          </div>
+                        )}
                       </div>
                       <div className="text-gray-400 text-xs truncate">
                         @{entry.user.monkeyTypeUsername}

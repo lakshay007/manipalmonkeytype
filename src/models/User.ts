@@ -9,6 +9,13 @@ export interface IUser extends Document {
   verificationStatus: 'pending' | 'verified' | 'rejected';
   branch?: string;
   year?: number;
+  // Email verification fields
+  eduEmail?: string;
+  eduEmailVerified: boolean;
+  verificationCode?: string;
+  verificationCodeExpiresAt?: Date;
+  lastVerificationEmailSent?: Date;
+  verificationAttempts: number;
   lastUpdated: Date;
   createdAt: Date;
 }
@@ -49,6 +56,34 @@ const UserSchema: Schema = new Schema({
     min: 1,
     max: 4,
   },
+  // Email verification fields
+  eduEmail: {
+    type: String,
+    validate: {
+      validator: function(email: string) {
+        if (!email) return true; // Optional field
+        return email.endsWith('@learner.manipal.edu');
+      },
+      message: 'Email must be a valid Manipal edu email (@learner.manipal.edu)'
+    }
+  },
+  eduEmailVerified: {
+    type: Boolean,
+    default: false,
+  },
+  verificationCode: {
+    type: String,
+  },
+  verificationCodeExpiresAt: {
+    type: Date,
+  },
+  lastVerificationEmailSent: {
+    type: Date,
+  },
+  verificationAttempts: {
+    type: Number,
+    default: 0,
+  },
   lastUpdated: {
     type: Date,
     default: Date.now,
@@ -66,5 +101,7 @@ UserSchema.index({ _id: 1, isVerified: 1 });
 // Additional indexes for user queries
 // Note: discordId and monkeyTypeUsername already have unique indexes
 UserSchema.index({ isVerified: 1 }); // For filtering verified users
+UserSchema.index({ eduEmail: 1 }); // For email verification lookup
+UserSchema.index({ eduEmailVerified: 1 }); // For verified email users
 
 export default mongoose.models.User || mongoose.model<IUser>('User', UserSchema); 
