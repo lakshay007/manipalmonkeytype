@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Manipal Type - MonkeyType Leaderboard",
+  title: "TypeManipal - MonkeyType Leaderboard",
   description: "The ultimate typing leaderboard for MAHE students. Compete with your peers and prove who's the fastest typer on campus",
   keywords: "typing, leaderboard, manipal, monkeytype, wpm, typing speed, competition",
 };
