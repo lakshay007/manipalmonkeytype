@@ -73,7 +73,7 @@ export function validateCategory(category: string): ValidationResult {
     return { isValid: false, error: 'Category is required' };
   }
 
-  const validCategories = ['15s', '30s', '60s', '120s', 'words'];
+  const validCategories = ['15s', '30s', '60s', '120s'];
   const sanitized = category.trim().toLowerCase();
 
   if (!validCategories.includes(sanitized)) {

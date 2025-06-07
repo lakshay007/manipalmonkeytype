@@ -58,16 +58,14 @@ const categoryDisplayNames: Record<string, string> = {
   "15s": "15s",
   "30s": "30s", 
   "60s": "60s",
-  "120s": "120s",
-  "words": "Words"
+  "120s": "120s"
 };
 
 const categoryColors: Record<string, string> = {
   "15s": "text-green-400 border-green-400/20 bg-green-400/5",
   "30s": "text-blue-400 border-blue-400/20 bg-blue-400/5",
   "60s": "text-purple-400 border-purple-400/20 bg-purple-400/5", 
-  "120s": "text-red-400 border-red-400/20 bg-red-400/5",
-  "words": "text-yellow-400 border-yellow-400/20 bg-yellow-400/5"
+  "120s": "text-red-400 border-red-400/20 bg-red-400/5"
 };
 
 export default function LeaderboardPage() {

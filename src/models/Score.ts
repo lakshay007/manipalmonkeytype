@@ -4,7 +4,7 @@ export interface IScore extends Document {
   userId: mongoose.Types.ObjectId;
   discordId: string;
   monkeyTypeUsername: string;
-  category: '15s' | '30s' | '60s' | '120s' | 'words';
+  category: '15s' | '30s' | '60s' | '120s';
   wpm: number;
   accuracy: number;
   consistency?: number;
@@ -31,7 +31,7 @@ const ScoreSchema: Schema = new Schema({
   },
   category: {
     type: String,
-    enum: ['15s', '30s', '60s', '120s', 'words'],
+    enum: ['15s', '30s', '60s', '120s'],
     required: true,
   },
   wpm: {
