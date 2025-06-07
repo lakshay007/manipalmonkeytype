@@ -219,4 +219,45 @@ export function sanitizeMongoQuery(obj: any): any {
   }
 
   return sanitized;
+}
+
+/**
+ * Validates search query input
+ */
+export function validateSearchQuery(query?: string): ValidationResult {
+  if (!query || typeof query !== 'string') {
+    return { isValid: false, error: 'Search query is required' };
+  }
+
+  const trimmed = query.trim();
+
+  if (trimmed.length < 2) {
+    return { isValid: false, error: 'Search query must be at least 2 characters long' };
+  }
+
+  if (trimmed.length > 50) {
+    return { isValid: false, error: 'Search query must be 50 characters or less' };
+  }
+
+  // Prevent obvious injection attempts
+  const forbiddenPatterns = [
+    /^\$/, // MongoDB operators
+    /javascript:/i, // JavaScript URLs
+    /<script/i, // Script tags
+    /\.\./,  // Path traversal
+    /null/i, // Null bytes
+    /union.*select/i, // SQL injection patterns
+    /drop.*table/i,
+    /delete.*from/i,
+    /insert.*into/i,
+    /update.*set/i
+  ];
+
+  for (const pattern of forbiddenPatterns) {
+    if (pattern.test(trimmed)) {
+      return { isValid: false, error: 'Search query contains invalid characters' };
+    }
+  }
+
+  return { isValid: true, sanitized: trimmed };
 } 

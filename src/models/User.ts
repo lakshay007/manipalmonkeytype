@@ -104,4 +104,20 @@ UserSchema.index({ isVerified: 1 }); // For filtering verified users
 UserSchema.index({ eduEmail: 1 }); // For email verification lookup
 UserSchema.index({ eduEmailVerified: 1 }); // For verified email users
 
+// TEXT SEARCH INDEXES FOR USERNAME SEARCH
+UserSchema.index({ 
+  discordUsername: "text", 
+  monkeyTypeUsername: "text" 
+}, {
+  name: "username_text_search",
+  weights: {
+    discordUsername: 10,
+    monkeyTypeUsername: 8
+  }
+});
+
+// PARTIAL MATCH INDEXES (for regex-based search)
+UserSchema.index({ discordUsername: 1 }); // For partial matching
+UserSchema.index({ monkeyTypeUsername: 1 }); // For partial matching
+
 export default mongoose.models.User || mongoose.model<IUser>('User', UserSchema); 

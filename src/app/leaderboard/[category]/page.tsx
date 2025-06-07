@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { ArrowLeft, Trophy, Medal, Award, User, ChevronLeft, ChevronRight, CheckCircle } from "lucide-react";
+import SearchBar from "@/components/SearchBar";
 
 interface LeaderboardEntry {
   _id: string;
@@ -34,6 +35,25 @@ interface LeaderboardData {
   leaderboard: LeaderboardEntry[];
 }
 
+interface SearchResultInput {
+  _id: string;
+  searchRank: number;
+  wpm: number;
+  accuracy: number;
+  consistency: number;
+  rawWpm: number;
+  lastUpdated?: string;
+  user: {
+    discordUsername: string;
+    discordAvatar?: string;
+    monkeyTypeUsername: string;
+    branch?: string;
+    year?: number;
+    eduEmailVerified?: boolean;
+  };
+  userId?: string;
+}
+
 const categoryDisplayNames: Record<string, string> = {
   "15s": "15s",
   "30s": "30s", 
@@ -58,6 +78,9 @@ export default function LeaderboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [highlightedUserId, setHighlightedUserId] = useState<string | null>(null);
+  const [searchResults, setSearchResults] = useState<LeaderboardEntry[] | null>(null);
+  const [isSearchActive, setIsSearchActive] = useState(false);
 
   const fetchLeaderboard = useCallback(async (page: number) => {
     try {
@@ -101,6 +124,42 @@ export default function LeaderboardPage() {
     setCurrentPage(page);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
+
+  const handleSearchResult = (result: SearchResultInput) => {
+    // Convert search result to leaderboard entry format
+    const leaderboardEntry: LeaderboardEntry = {
+      _id: result._id,
+      rank: result.searchRank,
+      wpm: result.wpm,
+      accuracy: result.accuracy,
+      consistency: result.consistency,
+      rawWpm: result.rawWpm,
+      lastUpdated: result.lastUpdated || new Date().toISOString(),
+      user: result.user
+    };
+
+    // Set search results and highlight the user
+    setSearchResults([leaderboardEntry]);
+    setHighlightedUserId(result.userId || result._id);
+    setIsSearchActive(true);
+    
+    // Optional: Scroll to show the result
+    setTimeout(() => {
+      const element = document.getElementById(`user-${result._id}`);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }, 100);
+  };
+
+  const clearSearch = () => {
+    setSearchResults(null);
+    setHighlightedUserId(null);
+    setIsSearchActive(false);
+  };
+
+  const displayData = searchResults || data?.leaderboard || [];
+  const isShowingSearchResults = isSearchActive && searchResults;
 
   if (loading) {
     return (
@@ -147,9 +206,45 @@ export default function LeaderboardPage() {
               <span className="text-white"> Leaderboard</span>
             </h1>
             <p className="text-gray-400">
-              {data?.totalUsers || 0} verified typists • Page {data?.currentPage} of {data?.totalPages}
+              {isShowingSearchResults 
+                ? `Search Results • ${searchResults?.length || 0} found`
+                : `${data?.totalUsers || 0} verified typists • Page ${data?.currentPage} of ${data?.totalPages}`
+              }
             </p>
           </div>
+        </div>
+
+        {/* Search Bar */}
+        <div className="mb-6">
+          <SearchBar
+            category={category}
+            onResultSelect={(result) => {
+              // Type-safe wrapper to convert SearchBar result to our expected type
+              const searchResult: SearchResultInput = {
+                _id: result._id,
+                searchRank: result.searchRank,
+                wpm: result.wpm,
+                accuracy: result.accuracy,
+                consistency: result.consistency,
+                rawWpm: result.rawWpm,
+                lastUpdated: new Date().toISOString(),
+                user: result.user,
+                userId: result._id
+              };
+              handleSearchResult(searchResult);
+            }}
+            className="max-w-lg mx-auto"
+          />
+          {isShowingSearchResults && (
+            <div className="text-center mt-2">
+              <button
+                onClick={clearSearch}
+                className="text-sm text-blue-400 hover:text-blue-300 transition-colors"
+              >
+                ← Back to full leaderboard
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Category Navigation */}
@@ -159,6 +254,7 @@ export default function LeaderboardPage() {
               <Link
                 key={cat}
                 href={`/leaderboard/${cat}`}
+                onClick={clearSearch} // Clear search when switching categories
                 className={`px-3 py-1.5 rounded-md transition-all text-sm font-medium ${
                   category === cat 
                     ? `${categoryColors[cat]} border` 
@@ -172,18 +268,27 @@ export default function LeaderboardPage() {
         </div>
 
         {/* Leaderboard */}
-        {data?.leaderboard.length === 0 ? (
+        {displayData.length === 0 ? (
           <div className="text-center py-12">
             <User className="h-16 w-16 text-gray-600 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-white mb-2">No scores yet</h3>
-            <p className="text-gray-400">Be the first to set a score in this category!</p>
+            <h3 className="text-xl font-semibold text-white mb-2">
+              {isShowingSearchResults ? 'No search results' : 'No scores yet'}
+            </h3>
+            <p className="text-gray-400">
+              {isShowingSearchResults 
+                ? 'Try a different search term or enable fuzzy search'
+                : 'Be the first to set a score in this category!'
+              }
+            </p>
           </div>
         ) : (
           <>
             {/* Leaderboard Header */}
             <div className="bg-gray-900/30 rounded-t-lg px-4 py-3 border border-gray-800/50">
               <div className="grid grid-cols-12 gap-4 text-xs font-medium text-gray-400 uppercase tracking-wide">
-                <div className="col-span-1">Rank</div>
+                <div className="col-span-1">
+                  {isShowingSearchResults ? 'Match' : 'Rank'}
+                </div>
                 <div className="col-span-4">Player</div>
                 <div className="col-span-2 text-center">WPM</div>
                 <div className="col-span-2 text-center">Accuracy</div>
@@ -194,82 +299,98 @@ export default function LeaderboardPage() {
 
             {/* Leaderboard Entries */}
             <div className="bg-gray-900/20 rounded-b-lg border-x border-b border-gray-800/50">
-              {data?.leaderboard.map((entry) => (
-                <div
-                  key={entry._id}
-                  className={`grid grid-cols-12 gap-4 items-center px-4 py-3 border-b border-gray-800/30 last:border-b-0 transition-all hover:bg-gray-800/30 ${getRankBgColor(entry.rank)}`}
-                >
-                  {/* Rank */}
-                  <div className="col-span-1 flex items-center">
-                    {getRankIcon(entry.rank)}
-                  </div>
-
-                  {/* Player Info */}
-                  <div className="col-span-4 flex items-center space-x-3">
-                    <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-700 flex items-center justify-center flex-shrink-0 relative">
-                      {entry.user.discordAvatar ? (
-                        <Image 
-                          src={entry.user.discordAvatar} 
-                          alt="Avatar" 
-                          fill
-                          className="object-cover"
-                        />
+              {displayData.map((entry) => {
+                const isHighlighted = highlightedUserId === entry._id;
+                const baseClassName = `grid grid-cols-12 gap-4 items-center px-4 py-3 border-b border-gray-800/30 last:border-b-0 transition-all hover:bg-gray-800/30`;
+                
+                return (
+                  <div
+                    key={entry._id}
+                    id={`user-${entry._id}`}
+                    className={`${baseClassName} ${
+                      isHighlighted 
+                        ? 'bg-blue-500/10 border-blue-500/30 ring-1 ring-blue-500/50' 
+                        : getRankBgColor(entry.rank)
+                    }`}
+                  >
+                    {/* Rank/Match Indicator */}
+                    <div className="col-span-1 flex items-center">
+                      {isShowingSearchResults ? (
+                        <span className="text-blue-400 font-bold text-sm">
+                          #{entry.rank}
+                        </span>
                       ) : (
-                        <User className="h-4 w-4 text-gray-400" />
+                        getRankIcon(entry.rank)
                       )}
                     </div>
-                    
-                    <div className="min-w-0 flex-1">
-                      <div className="font-medium text-white text-sm truncate flex items-center space-x-2">
-                        <span>{entry.user.discordUsername}</span>
-                        {entry.user.eduEmailVerified && (
-                          <div className="flex items-center space-x-1">
-                            <CheckCircle className="h-4 w-4 text-green-400 flex-shrink-0" />
-                            <span className="text-green-400 text-[7px] font-medium bg-green-400/10 px-1 py-0.5 rounded border border-green-400/20">
-                              VERIFIED
-                            </span>
-                          </div>
+
+                    {/* Player Info */}
+                    <div className="col-span-4 flex items-center space-x-3">
+                      <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-700 flex items-center justify-center flex-shrink-0 relative">
+                        {entry.user.discordAvatar ? (
+                          <Image 
+                            src={entry.user.discordAvatar} 
+                            alt="Avatar" 
+                            fill
+                            className="object-cover"
+                          />
+                        ) : (
+                          <User className="h-4 w-4 text-gray-400" />
                         )}
                       </div>
-                      <div className="text-gray-400 text-xs truncate">
-                        @{entry.user.monkeyTypeUsername}
-                        {entry.user.branch && entry.user.year && (
-                          <span className="ml-2">
-                            • {entry.user.branch} {entry.user.year}
-                          </span>
-                        )}
+                      
+                      <div className="min-w-0 flex-1">
+                        <div className="font-medium text-white text-sm truncate flex items-center space-x-2">
+                          <span>{entry.user.discordUsername}</span>
+                          {entry.user.eduEmailVerified && (
+                            <div className="flex items-center space-x-1">
+                              <CheckCircle className="h-4 w-4 text-green-400 flex-shrink-0" />
+                              <span className="text-green-400 text-[7px] font-medium bg-green-400/10 px-1 py-0.5 rounded border border-green-400/20">
+                                VERIFIED
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                        <div className="text-gray-400 text-xs truncate">
+                          @{entry.user.monkeyTypeUsername}
+                          {entry.user.branch && entry.user.year && (
+                            <span className="ml-2">
+                              • {entry.user.branch} {entry.user.year}
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  {/* WPM */}
-                  <div className="col-span-2 text-center">
-                    <div className="font-bold text-white text-lg">{entry.wpm}</div>
-                    <div className="text-xs text-gray-400">WPM</div>
-                  </div>
+                    {/* WPM */}
+                    <div className="col-span-2 text-center">
+                      <div className="font-bold text-white text-lg">{entry.wpm}</div>
+                      <div className="text-xs text-gray-400">WPM</div>
+                    </div>
 
-                  {/* Accuracy */}
-                  <div className="col-span-2 text-center">
-                    <div className="font-semibold text-green-400">{entry.accuracy}%</div>
-                    <div className="text-xs text-gray-400">ACC</div>
-                  </div>
+                    {/* Accuracy */}
+                    <div className="col-span-2 text-center">
+                      <div className="font-semibold text-green-400">{entry.accuracy}%</div>
+                      <div className="text-xs text-gray-400">ACC</div>
+                    </div>
 
-                  {/* Consistency */}
-                  <div className="col-span-2 text-center">
-                    <div className="font-semibold text-blue-400">{entry.consistency}%</div>
-                    <div className="text-xs text-gray-400">CON</div>
-                  </div>
+                    {/* Consistency */}
+                    <div className="col-span-2 text-center">
+                      <div className="font-semibold text-blue-400">{entry.consistency}%</div>
+                      <div className="text-xs text-gray-400">CON</div>
+                    </div>
 
-                  {/* Raw WPM */}
-                  <div className="col-span-1 text-center">
-                    <div className="font-medium text-gray-300 text-sm">{entry.rawWpm}</div>
+                    {/* Raw WPM */}
+                    <div className="col-span-1 text-center">
+                      <div className="font-medium text-gray-300 text-sm">{entry.rawWpm}</div>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
-            {/* Pagination */}
-            {data && data.totalPages > 1 && (
+            {/* Pagination - Only show for full leaderboard */}
+            {!isShowingSearchResults && data && data.totalPages > 1 && (
               <div className="flex items-center justify-between mt-6">
                 <div className="text-sm text-gray-400">
                   Showing {((data.currentPage - 1) * 25) + 1} to {Math.min(data.currentPage * 25, data.totalUsers)} of {data.totalUsers} players
