@@ -80,7 +80,7 @@ export async function GET(req: NextRequest) {
         error: categoryValidation.error
       }, { status: 400 });
     }
-
+  
     const sanitizedQuery = queryValidation.sanitized!;
     const sanitizedCategory = categoryValidation.sanitized!;
     

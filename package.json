@@ -12,6 +12,7 @@
     "@sparticuz/chromium": "^133.0.0",
     "@types/nodemailer": "^6.4.17",
     "@types/puppeteer": "^5.4.7",
+    "@vercel/analytics": "^1.5.0",
     "lucide-react": "^0.513.0",
     "mongodb": "^6.17.0",
     "mongoose": "^8.15.1",
