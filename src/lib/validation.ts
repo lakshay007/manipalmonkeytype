@@ -93,13 +93,13 @@ export function validatePagination(page?: string, limit?: string): {
   limit: number;
 } {
   let pageNum = 1;
-  let limitNum = 25;
+  let limitNum = 20;
 
   // Validate page
   if (page) {
     const parsedPage = parseInt(page, 10);
     if (isNaN(parsedPage) || parsedPage < 1 || parsedPage > 10000) {
-      return { isValid: false, error: 'Page must be a number between 1 and 10000', page: 1, limit: 25 };
+      return { isValid: false, error: 'Page must be a number between 1 and 10000', page: 1, limit: 20 };
     }
     pageNum = parsedPage;
   }
@@ -108,7 +108,7 @@ export function validatePagination(page?: string, limit?: string): {
   if (limit) {
     const parsedLimit = parseInt(limit, 10);
     if (isNaN(parsedLimit) || parsedLimit < 1 || parsedLimit > 100) {
-      return { isValid: false, error: 'Limit must be a number between 1 and 100', page: pageNum, limit: 25 };
+      return { isValid: false, error: 'Limit must be a number between 1 and 100', page: pageNum, limit: 20 };
     }
     limitNum = parsedLimit;
   }

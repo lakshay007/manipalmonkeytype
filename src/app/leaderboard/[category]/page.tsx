@@ -83,7 +83,7 @@ export default function LeaderboardPage() {
   const fetchLeaderboard = useCallback(async (page: number) => {
     try {
       setLoading(true);
-      const response = await fetch(`/api/leaderboard/${category}?page=${page}&limit=25`);
+      const response = await fetch(`/api/leaderboard/${category}?page=${page}&limit=20`);
       
       if (!response.ok) {
         throw new Error('Failed to fetch leaderboard');
@@ -391,7 +391,7 @@ export default function LeaderboardPage() {
             {!isShowingSearchResults && data && data.totalPages > 1 && (
               <div className="flex items-center justify-between mt-6">
                 <div className="text-sm text-gray-400">
-                  Showing {((data.currentPage - 1) * 25) + 1} to {Math.min(data.currentPage * 25, data.totalUsers)} of {data.totalUsers} players
+                  Showing {((data.currentPage - 1) * 20) + 1} to {Math.min(data.currentPage * 20, data.totalUsers)} of {data.totalUsers} players
                 </div>
                 
                 <div className="flex items-center space-x-2">
