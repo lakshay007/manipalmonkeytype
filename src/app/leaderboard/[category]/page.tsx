@@ -43,6 +43,7 @@ interface SearchResultInput {
   consistency: number;
   rawWpm: number;
   lastUpdated?: string;
+  leaderboardRank?: number;
   user: {
     discordUsername: string;
     discordAvatar?: string;
@@ -127,7 +128,7 @@ export default function LeaderboardPage() {
     // Convert search result to leaderboard entry format
     const leaderboardEntry: LeaderboardEntry = {
       _id: result._id,
-      rank: result.searchRank,
+      rank: result.leaderboardRank || result.searchRank,
       wpm: result.wpm,
       accuracy: result.accuracy,
       consistency: result.consistency,
@@ -226,6 +227,7 @@ export default function LeaderboardPage() {
                 consistency: result.consistency,
                 rawWpm: result.rawWpm,
                 lastUpdated: new Date().toISOString(),
+                leaderboardRank: result.leaderboardRank,
                 user: result.user,
                 userId: result._id
               };

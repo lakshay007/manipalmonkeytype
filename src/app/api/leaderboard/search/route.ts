@@ -147,6 +147,9 @@ export async function GET(req: NextRequest) {
               as: 'user',
               pipeline: [
                 {
+                  $match: { isVerified: true }
+                },
+                {
                   $project: {
                     discordUsername: 1,
                     discordAvatar: 1,
@@ -163,7 +166,7 @@ export async function GET(req: NextRequest) {
             $unwind: '$user'
           },
           {
-            $sort: { wpm: -1 }
+            $sort: { wpm: -1, accuracy: -1, consistency: -1 }
           }
         ]);
 
@@ -287,11 +290,59 @@ export async function GET(req: NextRequest) {
       ]);
     }
 
-    // Add ranking within search results
-    const rankedResults = searchResults.map((result, index) => ({
-      ...result,
-      searchRank: index + 1
-    }));
+    // Calculate leaderboard rank for each search result
+    const rankedResults = await Promise.all(
+      searchResults.map(async (result, index) => {
+        // Count users with better scores (same logic as main leaderboard)
+        const betterScoresCount = await Score.aggregate([
+          {
+            $match: {
+              category: sanitizedCategory,
+              personalBest: true,
+              $or: [
+                { wpm: { $gt: result.wpm } },
+                { 
+                  wpm: result.wpm, 
+                  accuracy: { $gt: result.accuracy } 
+                },
+                { 
+                  wpm: result.wpm, 
+                  accuracy: result.accuracy, 
+                  consistency: { $gt: result.consistency } 
+                }
+              ]
+            }
+          },
+          {
+            $lookup: {
+              from: 'users',
+              localField: 'userId',
+              foreignField: '_id',
+              as: 'user',
+              pipeline: [
+                {
+                  $match: { isVerified: true }
+                }
+              ]
+            }
+          },
+          {
+            $unwind: '$user'
+          },
+          {
+            $count: 'count'
+          }
+        ]);
+
+        const leaderboardRank = (betterScoresCount[0]?.count || 0) + 1;
+
+        return {
+          ...result,
+          searchRank: index + 1,
+          leaderboardRank
+        };
+      })
+    );
 
     return NextResponse.json({
       query: sanitizedQuery,

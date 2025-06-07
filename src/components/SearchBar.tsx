@@ -14,6 +14,7 @@ interface SearchResult {
   matchPriority?: number;
   similarity?: number;
   matchType?: string;
+  leaderboardRank?: number;
   user: {
     discordUsername: string;
     discordAvatar?: string;
@@ -216,6 +217,11 @@ export default function SearchBar({
                     <div className="text-right flex-shrink-0">
                       <div className="font-bold text-white text-sm">{result.wpm} WPM</div>
                       <div className="text-gray-400 text-xs">{result.accuracy}% ACC</div>
+                      {result.leaderboardRank && (
+                        <div className="text-blue-400 text-xs font-medium">
+                          #{result.leaderboardRank}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </button>
