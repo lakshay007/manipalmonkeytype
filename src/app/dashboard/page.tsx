@@ -205,6 +205,24 @@ export default function Dashboard() {
                 <p className="text-gray-400">
                   Link your MonkeyType account to start tracking your scores.
                 </p>
+                
+                {/* Visual guide for adding Manipal to bio */}
+                <div className="bg-blue-900/30 rounded-lg p-4 border border-blue-800">
+                  <h4 className="text-blue-400 font-medium mb-2">Before linking - Add &quot;Manipal&quot; to your bio:</h4>
+                  <div className="mb-3">
+                    <Image 
+                      src="/monkeytype-bio-guide.png" 
+                      alt="How to add Manipal to MonkeyType bio" 
+                      width={400}
+                      height={200}
+                      className="rounded border border-gray-600"
+                    />
+                  </div>
+                  <p className="text-gray-300 text-sm">
+                    Go to your MonkeyType profile settings and add &quot;Manipal&quot; to your bio for verification.
+                  </p>
+                </div>
+                
                 <Link 
                   href="/profile/setup"
                   className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors inline-block"

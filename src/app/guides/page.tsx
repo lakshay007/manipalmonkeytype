@@ -2,6 +2,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useSession, signIn } from "next-auth/react";
 import { ArrowRight, ExternalLink, CheckCircle, User, Link as LinkIcon, RefreshCw, Trophy, AlertCircle } from "lucide-react";
 
@@ -148,6 +149,18 @@ export default function Guides() {
                       <span>Complete at least a few typing tests on MonkeyType</span>
                     </li>
                   </ol>
+                  
+                  {/* Visual guide */}
+                  <div className="mt-4">
+                    <p className="text-yellow-400 text-sm font-medium mb-2">Visual guide - How to add &quot;Manipal&quot; to your bio:</p>
+                    <Image 
+                      src="/monkeytype-bio-guide.png" 
+                      alt="How to add Manipal to MonkeyType bio" 
+                      width={400}
+                      height={200}
+                      className="rounded border border-yellow-600"
+                    />
+                  </div>
                 </div>
 
                 <div className="bg-green-900/30 rounded-lg p-4 mb-4 border border-green-700">
