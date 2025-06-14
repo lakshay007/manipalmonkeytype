@@ -459,22 +459,111 @@ export default function LeaderboardPage() {
                   </button>
                   
                   <div className="flex items-center space-x-1">
-                    {Array.from({ length: Math.min(5, data.totalPages) }, (_, i) => {
-                      const pageNum = i + 1;
-                      return (
-                        <button
-                          key={pageNum}
-                          onClick={() => handlePageChange(pageNum)}
-                          className={`w-8 h-8 rounded-lg text-sm font-medium transition-colors ${
-                            pageNum === data.currentPage
-                              ? "bg-blue-600 text-white"
-                              : "bg-gray-800 text-gray-300 hover:bg-gray-700"
-                          }`}
-                        >
-                          {pageNum}
-                        </button>
-                      );
-                    })}
+                    {(() => {
+                      const currentPage = data.currentPage;
+                      const totalPages = data.totalPages;
+                      const pages = [];
+                      
+                      if (totalPages <= 4) {
+                        // Show all pages if 4 or fewer
+                        for (let i = 1; i <= totalPages; i++) {
+                          pages.push(
+                            <button
+                              key={i}
+                              onClick={() => handlePageChange(i)}
+                              className={`w-8 h-8 rounded-lg text-sm font-medium transition-colors ${
+                                i === currentPage
+                                  ? "bg-blue-600 text-white"
+                                  : "bg-gray-800 text-gray-300 hover:bg-gray-700"
+                              }`}
+                            >
+                              {i}
+                            </button>
+                          );
+                        }
+                      } else {
+                        // Show 1, 2, ..., last pattern
+                        // Page 1
+                        pages.push(
+                          <button
+                            key={1}
+                            onClick={() => handlePageChange(1)}
+                            className={`w-8 h-8 rounded-lg text-sm font-medium transition-colors ${
+                              1 === currentPage
+                                ? "bg-blue-600 text-white"
+                                : "bg-gray-800 text-gray-300 hover:bg-gray-700"
+                            }`}
+                          >
+                            1
+                          </button>
+                        );
+                        
+                        // Page 2 (if current page is 1 or 2, or if total pages is 5)
+                        if (currentPage <= 2 || totalPages === 5) {
+                          pages.push(
+                            <button
+                              key={2}
+                              onClick={() => handlePageChange(2)}
+                              className={`w-8 h-8 rounded-lg text-sm font-medium transition-colors ${
+                                2 === currentPage
+                                  ? "bg-blue-600 text-white"
+                                  : "bg-gray-800 text-gray-300 hover:bg-gray-700"
+                              }`}
+                            >
+                              2
+                            </button>
+                          );
+                        }
+                        
+                        // Current page (if it's not 1, 2, or last page)
+                        if (currentPage > 2 && currentPage < totalPages) {
+                          if (currentPage > 3) {
+                            pages.push(
+                              <span key="ellipsis" className="px-2 text-gray-500">
+                                ...
+                              </span>
+                            );
+                          }
+                          pages.push(
+                            <button
+                              key={currentPage}
+                              onClick={() => handlePageChange(currentPage)}
+                              className="w-8 h-8 rounded-lg text-sm font-medium transition-colors bg-blue-600 text-white"
+                            >
+                              {currentPage}
+                            </button>
+                          );
+                        }
+                        
+                        // Ellipsis before last page (if needed)
+                        if (totalPages > 3 && currentPage < totalPages - 1 && (currentPage <= 2 || totalPages > 5)) {
+                          pages.push(
+                            <span key="ellipsis-end" className="px-2 text-gray-500">
+                              ...
+                            </span>
+                          );
+                        }
+                        
+                        // Last page (if it's not page 1 or 2)
+                        if (totalPages > 2) {
+                          pages.push(
+                            <button
+                              key={totalPages}
+                              onClick={() => handlePageChange(totalPages)}
+                              className={`w-8 h-8 rounded-lg text-sm font-medium transition-colors ${
+                                totalPages === currentPage
+                                  ? "bg-blue-600 text-white"
+                                  : "bg-gray-800 text-gray-300 hover:bg-gray-700"
+                              }`}
+                            >
+                              {totalPages}
+                            </button>
+                          );
+                        }
+                      }
+                      
+                      return pages;
+                    })()}
                   </div>
                   
                   <button
