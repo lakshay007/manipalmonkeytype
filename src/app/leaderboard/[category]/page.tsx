@@ -6,6 +6,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { ArrowLeft, Trophy, Medal, Award, User, ChevronLeft, ChevronRight, CheckCircle } from "lucide-react";
 import SearchBar from "@/components/SearchBar";
+import LoadingSpinner, { LeaderboardSkeleton } from "@/components/LoadingSpinner";
 
 interface LeaderboardEntry {
   _id: string;
@@ -162,8 +163,59 @@ export default function LeaderboardPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="text-white text-lg">Loading leaderboard...</div>
+      <div className="min-h-screen bg-black pt-16 pb-10">
+        <div className="max-w-5xl mx-auto px-4">
+          {/* Header */}
+          <div className="mb-6">
+            <Link 
+              href="/dashboard"
+              className="flex items-center space-x-2 text-gray-400 hover:text-white transition-colors mb-4"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              <span>Back to Dashboard</span>
+            </Link>
+            
+            <div className="text-center">
+              <h1 className="text-3xl font-bold text-white mb-2">
+                <span className={categoryColors[category]?.split(' ')[0] || "text-white"}>
+                  {categoryDisplayNames[category] || category}
+                </span>
+                <span className="text-white"> Leaderboard</span>
+              </h1>
+            </div>
+          </div>
+
+          {/* Category Navigation */}
+          <div className="flex justify-center mb-6">
+            <div className="flex space-x-1 bg-gray-900/80 rounded-lg p-1 backdrop-blur">
+              {Object.entries(categoryDisplayNames).map(([cat, name]) => (
+                <Link
+                  key={cat}
+                  href={`/leaderboard/${cat}`}
+                  className={`px-3 py-1.5 rounded-md transition-all text-sm font-medium ${
+                    category === cat 
+                      ? `${categoryColors[cat]} border` 
+                      : "text-gray-400 hover:text-white hover:bg-gray-800/50"
+                  }`}
+                >
+                  {name}
+                </Link>
+              ))}
+            </div>
+          </div>
+
+          {/* Modern Loading Component */}
+          <div className="flex items-center justify-center py-16">
+            <LoadingSpinner 
+              message="Loading leaderboard..." 
+              icon="trophy"
+              size="lg"
+            />
+          </div>
+
+          {/* Skeleton Leaderboard */}
+          <LeaderboardSkeleton />
+        </div>
       </div>
     );
   }

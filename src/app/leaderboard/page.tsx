@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
+import LoadingSpinner from "@/components/LoadingSpinner";
 
 export default function LeaderboardPage() {
   const router = useRouter();
@@ -13,7 +14,11 @@ export default function LeaderboardPage() {
 
   return (
     <div className="min-h-screen bg-black flex items-center justify-center">
-      <div className="text-white text-lg">Redirecting to leaderboard...</div>
+      <LoadingSpinner 
+        message="Redirecting to leaderboard..." 
+        icon="trophy"
+        size="lg"
+      />
     </div>
   );
 } 
