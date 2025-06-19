@@ -7,7 +7,8 @@ import {
   User, 
   LogOut, 
   BarChart3,
-  BookOpen
+  BookOpen,
+  Github
 } from "lucide-react";
 import { useState } from "react";
 
@@ -32,6 +33,16 @@ export default function Navbar() {
             <Link href="/guides" className="text-gray-300 hover:text-white transition-colors">
               Guides
             </Link>
+            <a 
+              href="https://github.com/lakshay007/manipalmonkeytype" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-gray-300 hover:text-white transition-colors flex items-center space-x-1"
+              title="Star us on GitHub"
+            >
+              <Github className="h-4 w-4" />
+              <span>GitHub</span>
+            </a>
             {session && (
               <Link href="/dashboard" className="text-gray-300 hover:text-white transition-colors">
                 Dashboard
@@ -86,6 +97,16 @@ export default function Navbar() {
                       <BookOpen className="h-4 w-4" />
                       <span>Guides</span>
                     </Link>
+                    <a
+                      href="https://github.com/lakshay007/manipalmonkeytype"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center space-x-2 px-4 py-2 text-gray-300 hover:bg-gray-800 hover:text-white md:hidden"
+                      onClick={() => setShowDropdown(false)}
+                    >
+                      <Github className="h-4 w-4" />
+                      <span>GitHub</span>
+                    </a>
                     <hr className="border-gray-700 my-1 md:hidden" />
                     <button
                       onClick={() => {
