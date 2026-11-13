@@ -9,6 +9,9 @@ export const authOptions: NextAuthOptions = {
       // Discord sends an `iss` param on the OAuth redirect; without an issuer
       // configured, openid-client rejects the callback and sign-in fails.
       issuer: "https://discord.com",
+      // The default 3.5s timeout is too tight for Discord's token endpoint
+      // from a cold serverless function and makes sign-in fail intermittently.
+      httpOptions: { timeout: 10000 },
       authorization: {
         params: {
           scope: "identify",
