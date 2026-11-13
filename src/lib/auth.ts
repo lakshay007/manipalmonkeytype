@@ -6,6 +6,9 @@ export const authOptions: NextAuthOptions = {
     DiscordProvider({
       clientId: process.env.DISCORD_CLIENT_ID!,
       clientSecret: process.env.DISCORD_CLIENT_SECRET!,
+      // Discord sends an `iss` param on the OAuth redirect; without an issuer
+      // configured, openid-client rejects the callback and sign-in fails.
+      issuer: "https://discord.com",
       authorization: {
         params: {
           scope: "identify",
